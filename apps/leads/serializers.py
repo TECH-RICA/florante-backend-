@@ -41,8 +41,28 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         for field in ["name", "organization", "phone", "industry", "message"]:
             if field in attrs and attrs[field]:
                 attrs[field] = _sanitize_string(attrs[field])
+
         if "email" in attrs and attrs["email"]:
             attrs["email"] = attrs["email"].strip().lower()
+
+        # Resilient category normalization
+        cat = attrs.get("category")
+        valid_cats = [c[0] for c in Lead.Category.choices]
+        if cat and cat not in valid_cats:
+            attrs["category"] = Lead.Category.ORGANIZATION
+
+        # Resilient need normalization
+        need = attrs.get("need")
+        if need:
+            valid_needs = [n[0] for n in Lead.Need.choices]
+            need_slug = str(need).lower().replace(" & ", "_").replace(" / ", "_").replace(" ", "_")
+            if need in valid_needs:
+                attrs["need"] = need
+            elif need_slug in valid_needs:
+                attrs["need"] = need_slug
+            else:
+                attrs["need"] = Lead.Need.OTHER
+
         return attrs
 
     def create(self, validated_data):
