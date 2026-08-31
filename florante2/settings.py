@@ -144,9 +144,13 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CORS — allow the React dev server
-CORS_ALLOWED_ORIGINS = [FRONTEND_ORIGIN]
+# CORS — allow Cloudflare Pages, Netlify, and custom frontend domains
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.pages\.dev$",
+    r"^https://.*\.netlify\.app$",
+]
 
 # Email — Brevo (Sendinblue) SMTP. Add credentials in backend/.env:
 #   EMAIL_HOST_USER (your Brevo account login)
