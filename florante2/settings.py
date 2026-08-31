@@ -97,17 +97,24 @@ DATABASES = {
     }
 }
 
-# Cache — Redis
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env("REDIS_CACHE_URL", default="redis://localhost:6379/1"),
+# Cache & Sessions — Redis if provided, otherwise in-memory + DB sessions fallback
+REDIS_CACHE_URL = env("REDIS_CACHE_URL", default="")
+if REDIS_CACHE_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_CACHE_URL,
+        }
     }
-}
-
-# Sessions — Redis-backed
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "default"
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+    SESSION_CACHE_ALIAS = "default"
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+    SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
