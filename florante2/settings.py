@@ -18,7 +18,7 @@ environ.Env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("SECRET_KEY", default="dev-insecure-key")
 DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*", ".onrender.com", "florante-backend.onrender.com", "localhost", "127.0.0.1"])
 
 SITE_DOMAIN = env("SITE_DOMAIN", default="localhost:8000")
 FRONTEND_ORIGIN = env("FRONTEND_ORIGIN", default="http://localhost:5173")
