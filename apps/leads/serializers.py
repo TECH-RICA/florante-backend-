@@ -30,6 +30,9 @@ class LeadSerializer(serializers.ModelSerializer):
 class LeadCreateSerializer(serializers.ModelSerializer):
     """Write-only serializer used by the website forms with security sanitization."""
 
+    category = serializers.CharField(required=False, allow_blank=True, default=Lead.Category.ORGANIZATION)
+    need = serializers.CharField(required=False, allow_blank=True, default=Lead.Need.OTHER)
+
     class Meta:
         model = Lead
         fields = [
@@ -46,22 +49,23 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             attrs["email"] = attrs["email"].strip().lower()
 
         # Resilient category normalization
-        cat = attrs.get("category")
+        cat = str(attrs.get("category", "")).lower().strip()
         valid_cats = [c[0] for c in Lead.Category.choices]
-        if cat and cat not in valid_cats:
+        if cat in valid_cats:
+            attrs["category"] = cat
+        else:
             attrs["category"] = Lead.Category.ORGANIZATION
 
         # Resilient need normalization
-        need = attrs.get("need")
-        if need:
-            valid_needs = [n[0] for n in Lead.Need.choices]
-            need_slug = str(need).lower().replace(" & ", "_").replace(" / ", "_").replace(" ", "_")
-            if need in valid_needs:
-                attrs["need"] = need
-            elif need_slug in valid_needs:
-                attrs["need"] = need_slug
-            else:
-                attrs["need"] = Lead.Need.OTHER
+        need = attrs.get("need", "")
+        valid_needs = [n[0] for n in Lead.Need.choices]
+        need_slug = str(need).lower().replace(" & ", "_").replace(" / ", "_").replace(" ", "_").strip()
+        if need in valid_needs:
+            attrs["need"] = need
+        elif need_slug in valid_needs:
+            attrs["need"] = need_slug
+        else:
+            attrs["need"] = Lead.Need.OTHER
 
         return attrs
 
