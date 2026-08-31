@@ -7,7 +7,7 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = "Run all migrations, seeds, and create initial admin user automatically"
+    help = "Run all migrations, seeds, and ensure admin superuser credentials"
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.NOTICE("=== Running Migrations ==="))
@@ -22,21 +22,32 @@ class Command(BaseCommand):
         call_command("seed_case_studies")
         call_command("seed_hackathons")
 
-        # Admin user creation
-        email = os.environ.get("ADMIN_EMAIL", "admin@florante.tech").strip()
+        # Admin user creation / password sync
+        email = os.environ.get("ADMIN_EMAIL", "admin@florante.tech").strip().lower()
         password = os.environ.get("ADMIN_PASSWORD", "FloranteAdmin2026!").strip()
-        username = email.split("@")[0]
+        username = os.environ.get("ADMIN_USERNAME", email.split("@")[0]).strip()
 
-        if not User.objects.filter(email__iexact=email).exists():
-            User.objects.create_superuser(
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            user = User.objects.filter(username__iexact=username).first()
+
+        if not user:
+            user = User.objects.create_superuser(
                 username=username,
                 email=email,
                 password=password,
                 first_name="Florante",
                 last_name="Admin",
             )
-            self.stdout.write(self.style.SUCCESS(f"=== Superuser '{email}' created successfully ==="))
+            self.stdout.write(self.style.SUCCESS(f"=== Created superuser '{email}' ==="))
         else:
-            self.stdout.write(self.style.NOTICE(f"=== Superuser '{email}' already exists ==="))
+            user.email = email
+            user.username = username
+            user.is_staff = True
+            user.is_superuser = True
+            user.is_active = True
+            user.set_password(password)
+            user.save()
+            self.stdout.write(self.style.SUCCESS(f"=== Updated superuser '{email}' password & staff privileges ==="))
 
         self.stdout.write(self.style.SUCCESS("=== Production Database Setup Complete ==="))

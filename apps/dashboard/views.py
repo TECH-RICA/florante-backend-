@@ -140,17 +140,16 @@ class AdminLoginView(views.APIView):
                 {"detail": "Email and password are required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        user = None
-        try:
-            user = User.objects.get(email__iexact=identifier)
-        except User.DoesNotExist:
+        user = User.objects.filter(Q(email__iexact=identifier) | Q(username__iexact=identifier)).first()
+        if user is None:
             user = authenticate(request, username=identifier, password=password)
         else:
             if not user.check_password(password):
                 user = None
+
         if user is None or not user.is_staff or not user.is_active:
             return Response(
-                {"detail": "Invalid email or password."},
+                {"detail": "Invalid credentials or account is not an active staff member."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         token, _ = Token.objects.get_or_create(user=user)
