@@ -490,18 +490,33 @@ class AdminAuditListView(views.APIView):
 
 
 class SiteConfigAdminView(views.APIView):
-    """Singleton site settings — GET to read, PUT to update."""
+    """Singleton site settings — GET to read, PUT/PATCH/POST to update."""
     permission_classes = [IsAdminUser]
 
     def get(self, request):
         return Response(SiteConfigAdminSerializer(SiteConfig.load()).data)
 
     def put(self, request):
+        return self._update(request)
+
+    def patch(self, request):
+        return self._update(request)
+
+    def post(self, request):
+        return self._update(request)
+
+    def _update(self, request):
         serializer = SiteConfigAdminSerializer(
             SiteConfig.load(), data=request.data, partial=True
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        _audit(
+            request.user,
+            AdminAudit.Action.UPDATED,
+            "site",
+            summary="Updated site configuration settings",
+        )
         return Response(serializer.data)
 
 
